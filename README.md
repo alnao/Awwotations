@@ -116,6 +116,8 @@ pip install -r requirements.txt
 ## Teardown
 
 ```bash
+aws s3 rm s3://awwotations-test-frontend --recursive
+
 cd infrastructure && terraform destroy
 ```
 
