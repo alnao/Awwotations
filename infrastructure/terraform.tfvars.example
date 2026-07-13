@@ -1,0 +1,7 @@
+aws_region           = "eu-central-1"
+project_name         = "awwotations-test"
+environment          = "test"
+jwt_secret           = "CHANGE_ME_TO_A_LONG_RANDOM_SECRET"
+access_token_ttl     = 3600
+refresh_token_ttl    = 2592000
+frontend_bucket_name = "awwotations-test-frontend-CHANGE_ME"

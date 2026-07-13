@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: AlNaoAwwotations API
+  version: 1.0.0
+  description: >
+    Post-it style annotation system organized in boards. Users own boards,
+    and each board contains notes with a rich lifecycle (status, pin, favorite).
+  license:
+    name: MIT
+servers:
+  - url: https://your-api-id.execute-api.eu-west-1.amazonaws.com
+    description: API Gateway HTTP API (replace with the terraform output api_endpoint)
+
+tags:
+  - name: Auth
+  - name: Boards
+  - name: Notes
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in and receive access + refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renew an access token using a refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  tokenType:
+                    type: string
+                    example: Bearer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /boards:
+    get:
+      tags: [Boards]
+      summary: List boards owned by the authenticated user
+      responses:
+        "200":
+          description: List of boards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  boards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Board"
+                  count:
+                    type: integer
+    post:
+      tags: [Boards]
+      summary: Create a board
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BoardCreateRequest"
+      responses:
+        "201":
+          description: Board created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /boards/{boardId}:
+    parameters:
+      - $ref: "#/components/parameters/BoardId"
+    put:
+      tags: [Boards]
+      summary: Update a board (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BoardUpdateRequest"
+      responses:
+        "200":
+          description: Board updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Boards]
+      summary: Delete a board and all its notes (owner only)
+      responses:
+        "204":
+          description: Board deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /boards/{boardId}/notes:
+    parameters:
+      - $ref: "#/components/parameters/BoardId"
+    get:
+      tags: [Notes]
+      summary: List notes of a board
+      responses:
+        "200":
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Note"
+                  count:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Notes]
+      summary: Create a note (initial status CREATED)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteWriteRequest"
+      responses:
+        "201":
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /boards/{boardId}/notes/{noteId}:
+    parameters:
+      - $ref: "#/components/parameters/BoardId"
+      - $ref: "#/components/parameters/NoteId"
+    put:
+      tags: [Notes]
+      summary: Update note content (403 if status is DONE or REJECTED)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteWriteRequest"
+      responses:
+        "200":
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Content locked (DONE/REJECTED) or no access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Notes]
+      summary: Delete a note
+      responses:
+        "204":
+          description: Note deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /boards/{boardId}/notes/{noteId}/status:
+    parameters:
+      - $ref: "#/components/parameters/BoardId"
+      - $ref: "#/components/parameters/NoteId"
+    patch:
+      tags: [Notes]
+      summary: Change note status (validated against the transition matrix)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdateRequest"
+      responses:
+        "200":
+          description: Status changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          description: Invalid or disallowed transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /boards/{boardId}/notes/{noteId}/pin:
+    parameters:
+      - $ref: "#/components/parameters/BoardId"
+      - $ref: "#/components/parameters/NoteId"
+    patch:
+      tags: [Notes]
+      summary: Toggle pin (owner only, max 1 pinned per board, auto-unpins previous)
+      responses:
+        "200":
+          description: Pin toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /boards/{boardId}/notes/{noteId}/favorite:
+    parameters:
+      - $ref: "#/components/parameters/BoardId"
+      - $ref: "#/components/parameters/NoteId"
+    patch:
+      tags: [Notes]
+      summary: Toggle favorite (any user with board access)
+      responses:
+        "200":
+          description: Favorite toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    BoardId:
+      name: boardId
+      in: path
+      required: true
+      schema:
+        type: string
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Not allowed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          nullable: true
+
+    RegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    UserPublic:
+      type: object
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        user:
+          $ref: "#/components/schemas/UserPublic"
+
+    Board:
+      type: object
+      properties:
+        boardId:
+          type: string
+        ownerId:
+          type: string
+        title:
+          type: string
+        color:
+          type: string
+          example: "#ffd966"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BoardCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        color:
+          type: string
+          example: "#ffd966"
+
+    BoardUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        color:
+          type: string
+
+    Link:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+        label:
+          type: string
+          nullable: true
+
+    NoteStatus:
+      type: string
+      enum: [DREAM, CREATED, TODO, MODIFIED, DONE, REJECTED]
+
+    TextType:
+      type: string
+      description: MD, HTML, TEXT or an extensible CODE_XXXX value matching ^CODE_[A-Z]+$
+      example: CODE_JSON
+
+    NoteWriteRequest:
+      type: object
+      required:
+        [title, text, textType, userDateTime, color, posX, posY, width, height]
+      properties:
+        title:
+          type: string
+        text:
+          type: string
+        textType:
+          $ref: "#/components/schemas/TextType"
+        userDateTime:
+          type: string
+          description: ISO date (YYYY-MM-DD) or datetime; date required, time optional
+        links:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/Link"
+        iconMain:
+          type: string
+          nullable: true
+          example: "fas fa-star"
+        iconSecondary:
+          type: string
+          nullable: true
+          example: "fas fa-flag"
+        color:
+          type: string
+          example: "#ffd966"
+        posX:
+          type: number
+        posY:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+        pinned:
+          type: boolean
+          default: false
+        favorite:
+          type: boolean
+          default: false
+
+    StatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/NoteStatus"
+
+    Note:
+      allOf:
+        - $ref: "#/components/schemas/NoteWriteRequest"
+        - type: object
+          properties:
+            noteId:
+              type: string
+            boardId:
+              type: string
+            status:
+              $ref: "#/components/schemas/NoteStatus"
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            statusChangedAt:
+              type: string
+              format: date-time
