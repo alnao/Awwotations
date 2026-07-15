@@ -17,6 +17,8 @@ def handler(event: dict, context: object) -> dict:
             "ownerId": b["ownerId"],
             "title": b["title"],
             "color": b["color"],
+            "order": b.get("order", 0),
+            "favorite": b.get("favorite", False),
             "createdAt": b["createdAt"],
             "updatedAt": b["updatedAt"],
         }

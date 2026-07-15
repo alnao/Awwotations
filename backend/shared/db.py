@@ -125,6 +125,17 @@ def list_boards_by_owner(owner_id: str) -> list[dict]:
     return [from_dynamo(i) for i in resp.get("Items", [])]
 
 
+def next_board_order(owner_id: str) -> int:
+    """Return the next available display order for a new board.
+
+    Scans the owner's boards and returns max(order) + 1, or 0 if none exist.
+    """
+    boards = list_boards_by_owner(owner_id)
+    if not boards:
+        return 0
+    return max(b.get("order", 0) for b in boards) + 1
+
+
 def update_board(board_id: str, updates: dict) -> dict:
     expr_names = {}
     expr_values = {}
@@ -207,3 +218,19 @@ def delete_note(board_id: str, note_id: str) -> None:
     get_table().delete_item(
         Key={"PK": board_pk(board_id), "SK": note_sk(note_id)}
     )
+
+
+def get_allowed_ips() -> set[str]:
+    """Retrieve the set of allowed IPs from DynamoDB (PK=CONFIG#IPLIST, SK=META)."""
+    try:
+        resp = get_table().get_item(Key={"PK": "CONFIG#IPLIST", "SK": "META"})
+        item = resp.get("Item")
+        if item and "allowedIps" in item:
+            val = item["allowedIps"]
+            if isinstance(val, set):
+                return val
+            if isinstance(val, list):
+                return set(val)
+    except Exception as e:
+        print(f"Error fetching allowed IPs: {e}")
+    return set()

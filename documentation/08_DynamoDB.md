@@ -16,6 +16,10 @@ secondary indexes. Keys and access patterns are implemented in `shared/db.py`.
 | ------ | ----------------- | -------------- | ----------------- | --------------- | ---------------- | -------------- |
 | User   | `USER#<userId>`   | `PROFILE`      | `EMAIL#<email>`   | `USER#<userId>` | —                | —              |
 | Board  | `BOARD#<boardId>` | `META`         | `USER#<ownerId>`  | `BOARD#<id>`    | —                | —              |
+
+Board items also store `order` (integer, display order) and `favorite` (boolean).
+These attributes default to `0` and `false` for backward compatibility with
+existing items that predate their introduction.
 | Note   | `BOARD#<boardId>` | `NOTE#<noteId>`| —                 | —               | `BOARD#<boardId>`| `NOTE#<noteId>`|
 
 ## Indexes

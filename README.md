@@ -113,6 +113,45 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## AWS Cost Estimate
+
+The infrastructure is **fully serverless and pay-per-use** — there are no always-on
+resources (no EC2, no RDS, no ECS). For a small user base (~30 active users, low
+traffic), the monthly cost is negligible.
+
+> **Note:** The figures below assume an AWS account older than 2 years.
+> The free tier (Lambda 1M requests/month, DynamoDB 25 GB, etc.) applies only to
+> accounts in their first 12 months. After that, all usage is billed at standard rates.
+
+| Service | Config | Estimated cost/month |
+|---|---|---|
+| **Lambda** (15 functions) | Python 3.12, 256 MB, ~6 000 invocations/month | ~$0.01 |
+| **API Gateway HTTP v2** | ~6 000 requests/month @ $1.00/1M | ~$0.01 |
+| **DynamoDB** | PAY_PER_REQUEST, ~1 MB data, PITR enabled | ~$0.01 |
+| **S3** | ~5 MB static bundle, served via CloudFront cache | ~$0.00 |
+| **CloudFront** | ~300 MB transfer-out/month @ $0.085/GB (EU) | ~$0.03 |
+| **SSM Parameter Store** | 1 SecureString (JWT secret) | **$0.05** |
+| **CloudWatch Logs** | 15 log groups, 14-day retention, low volume | ~$0.00 |
+| **Total** | | **~$0.10 – $0.15 / month** |
+
+### Cost scaling
+
+| Scenario | Monthly active users | Estimated cost |
+|---|---|---|
+| Current (low usage) | ~30 | ~$0.15 |
+| Moderate growth | ~200 | ~$0.50 |
+| Popular app | ~2 000 | ~$3–5 |
+
+### Notes
+- **DynamoDB PITR** is enabled (`point_in_time_recovery = true`). It adds cost as
+  data grows ($0.20/GB/month on stored data). Disable it if point-in-time recovery
+  is not required.
+- **CloudFront** has no monthly minimum fee; you only pay for data transferred out
+  and request counts. With aggressive caching (default TTL 1 h, max 24 h), S3 is
+  rarely hit directly.
+- The most cost-effective decision in the stack is **API Gateway HTTP v2** over REST
+  API: $1.00/1M vs $3.50/1M calls.
+
 ## Teardown
 
 ```bash

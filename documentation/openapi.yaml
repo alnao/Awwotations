@@ -446,6 +446,13 @@ components:
         color:
           type: string
           example: "#ffd966"
+        order:
+          type: integer
+          minimum: 0
+          description: Display order; auto-assigned as max+1 when omitted on creation
+        favorite:
+          type: boolean
+          default: false
         createdAt:
           type: string
           format: date-time
@@ -462,6 +469,13 @@ components:
         color:
           type: string
           example: "#ffd966"
+        order:
+          type: integer
+          minimum: 0
+          description: Display order; auto-assigned as max+1 when omitted
+        favorite:
+          type: boolean
+          default: false
 
     BoardUpdateRequest:
       type: object
@@ -470,6 +484,11 @@ components:
           type: string
         color:
           type: string
+        order:
+          type: integer
+          minimum: 0
+        favorite:
+          type: boolean
 
     Link:
       type: object

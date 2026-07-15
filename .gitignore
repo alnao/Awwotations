@@ -40,6 +40,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# ---------- Scripts ----------
+scripts/test/.env
+
 # ---------- OS / Editor ----------
 .DS_Store
 Thumbs.db

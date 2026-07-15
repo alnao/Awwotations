@@ -23,6 +23,7 @@ def handler(event: dict, context: object) -> dict:
 
     board_id = str(uuid.uuid4())
     now = utcnow_iso()
+    order = req.order if req.order is not None else db.next_board_order(user_id)
     item = {
         "PK": db.board_pk(board_id),
         "SK": "META",
@@ -33,6 +34,8 @@ def handler(event: dict, context: object) -> dict:
         "ownerId": user_id,
         "title": req.title,
         "color": req.color,
+        "order": order,
+        "favorite": req.favorite,
         "createdAt": now,
         "updatedAt": now,
     }
@@ -44,6 +47,8 @@ def handler(event: dict, context: object) -> dict:
             "ownerId": user_id,
             "title": req.title,
             "color": req.color,
+            "order": order,
+            "favorite": req.favorite,
             "createdAt": now,
             "updatedAt": now,
         }

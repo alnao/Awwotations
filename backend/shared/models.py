@@ -116,6 +116,8 @@ class RefreshRequest(BaseModel):
 class BoardCreateRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=256)
     color: str = Field(default="#ffd966")
+    order: Optional[int] = Field(default=None, ge=0, description="Display order; auto-assigned as max+1 when omitted")
+    favorite: bool = Field(default=False)
 
     @field_validator("color")
     @classmethod
@@ -128,6 +130,8 @@ class BoardCreateRequest(BaseModel):
 class BoardUpdateRequest(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=256)
     color: Optional[str] = None
+    order: Optional[int] = Field(default=None, ge=0)
+    favorite: Optional[bool] = None
 
     @field_validator("color")
     @classmethod

@@ -31,6 +31,10 @@ def handler(event: dict, context: object) -> dict:
         updates["title"] = req.title
     if req.color is not None:
         updates["color"] = req.color
+    if req.order is not None:
+        updates["order"] = req.order
+    if req.favorite is not None:
+        updates["favorite"] = req.favorite
 
     updated = db.update_board(board_id, updates)
     return response.ok(
@@ -39,6 +43,8 @@ def handler(event: dict, context: object) -> dict:
             "ownerId": updated["ownerId"],
             "title": updated["title"],
             "color": updated["color"],
+            "order": updated.get("order", 0),
+            "favorite": updated.get("favorite", False),
             "createdAt": updated["createdAt"],
             "updatedAt": updated["updatedAt"],
         }
