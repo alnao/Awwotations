@@ -12,7 +12,10 @@ export default function Boards() {
   async function load() {
     try {
       const res = await api.listBoards();
-      setBoards(res.boards);
+      // Backend sorts by order; defensive client-side sort for older deployments.
+      setBoards(
+        [...res.boards].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      );
     } catch (err) {
       setError(err.message);
     }
@@ -28,6 +31,38 @@ export default function Boards() {
     try {
       await api.createBoard({ title, color });
       setTitle("");
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function toggleFavorite(board, e) {
+    e.stopPropagation();
+    setError("");
+    try {
+      await api.updateBoard(board.boardId, { favorite: !board.favorite });
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function move(index, delta, e) {
+    e.stopPropagation();
+    const target = index + delta;
+    if (target < 0 || target >= boards.length) return;
+    setError("");
+    const reordered = [...boards];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    try {
+      // Persist order = array index; also normalizes legacy boards without order.
+      await Promise.all(
+        reordered
+          .map((b, i) => ({ b, i }))
+          .filter(({ b, i }) => (b.order ?? 0) !== i)
+          .map(({ b, i }) => api.updateBoard(b.boardId, { order: i }))
+      );
       load();
     } catch (err) {
       setError(err.message);
@@ -66,7 +101,7 @@ export default function Boards() {
       </form>
       {error && <div className="error">{error}</div>}
       <div className="board-grid">
-        {boards.map((b) => (
+        {boards.map((b, i) => (
           <div
             key={b.boardId}
             className="board-card"
@@ -75,13 +110,41 @@ export default function Boards() {
           >
             <div className="row" style={{ justifyContent: "space-between" }}>
               <strong>{b.title}</strong>
-              <button
-                className="icon-btn"
-                onClick={(e) => remove(b.boardId, e)}
-                title="Delete board"
-              >
-                <i className="fas fa-trash" />
-              </button>
+              <div className="row">
+                <button
+                  className="icon-btn"
+                  onClick={(e) => move(i, -1, e)}
+                  disabled={i === 0}
+                  title="Move left"
+                >
+                  <i className="fas fa-arrow-left" />
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={(e) => move(i, 1, e)}
+                  disabled={i === boards.length - 1}
+                  title="Move right"
+                >
+                  <i className="fas fa-arrow-right" />
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={(e) => toggleFavorite(b, e)}
+                  title="Toggle favorite"
+                >
+                  <i
+                    className={b.favorite ? "fas fa-star" : "far fa-star"}
+                    style={b.favorite ? { color: "#c98a00" } : undefined}
+                  />
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={(e) => remove(b.boardId, e)}
+                  title="Delete board"
+                >
+                  <i className="fas fa-trash" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

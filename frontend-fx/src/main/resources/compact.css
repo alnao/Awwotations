@@ -1,0 +1,46 @@
+/* Compact layout: minimal margin/padding everywhere. Real styling comes later. */
+
+.root {
+    -fx-font-size: 12px;
+}
+
+.list-view {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
+
+.list-cell {
+    -fx-padding: 1 4 1 4;
+}
+
+.button, .menu-button {
+    -fx-padding: 1 6 1 6;
+}
+
+.combo-box {
+    -fx-padding: 0;
+}
+
+.note-title {
+    -fx-font-weight: bold;
+}
+
+.note-preview {
+    -fx-text-fill: derive(-fx-text-background-color, 40%);
+}
+
+.note-status {
+    -fx-font-size: 10px;
+    -fx-text-fill: derive(-fx-text-background-color, 30%);
+}
+
+/* Read-only textbox with the full note text, kept as tight as possible */
+.note-text {
+    -fx-font-size: 11px;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.note-text .content {
+    -fx-padding: 1 4 1 4;
+}

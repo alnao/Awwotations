@@ -11,6 +11,7 @@ def handler(event: dict, context: object) -> dict:
         return response.bad_request(str(exc))
 
     boards = db.list_boards_by_owner(user_id)
+    boards.sort(key=lambda b: (b.get("order", 0), b.get("createdAt", "")))
     public = [
         {
             "boardId": b["boardId"],

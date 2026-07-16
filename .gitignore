@@ -43,6 +43,10 @@ yarn-error.log*
 # ---------- Scripts ----------
 scripts/test/.env
 
+# ---------- Java / Maven ----------
+target/
+*.class
+
 # ---------- OS / Editor ----------
 .DS_Store
 Thumbs.db

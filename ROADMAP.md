@@ -2,6 +2,7 @@ Italian document of Roadmap, TodoList and Done List.
 
 # TODO LIST
 
+- nel frontend-fx 
 
 - script senza cloudFront e senza sito!
 
