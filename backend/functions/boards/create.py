@@ -36,6 +36,7 @@ def handler(event: dict, context: object) -> dict:
         "color": req.color,
         "order": order,
         "favorite": req.favorite,
+        "orderNotes": req.orderNotes,
         "createdAt": now,
         "updatedAt": now,
     }
@@ -49,6 +50,7 @@ def handler(event: dict, context: object) -> dict:
             "color": req.color,
             "order": order,
             "favorite": req.favorite,
+            "orderNotes": req.orderNotes,
             "createdAt": now,
             "updatedAt": now,
         }

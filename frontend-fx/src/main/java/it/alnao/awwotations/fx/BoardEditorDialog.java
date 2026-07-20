@@ -6,6 +6,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -35,6 +36,10 @@ public class BoardEditorDialog extends Dialog<Map<String, Object>> {
         orderField.setPrefColumnCount(4);
         orderField.setPromptText("auto");
 
+        ComboBox<String> orderNotesCombo = new ComboBox<>();
+        orderNotesCombo.getItems().addAll("POS_X", "POS_Y", "CREATE_ASC", "CREATE_DESC", "USER_DATE_ASC", "USER_DATE_DESC", "TITLE");
+        orderNotesCombo.setValue(existing == null ? "POS_X" : (existing.orderNotes == null ? "POS_X" : existing.orderNotes));
+
         CheckBox favoriteCheck = new CheckBox("Favorite");
         favoriteCheck.setSelected(existing != null && existing.favorite);
 
@@ -45,7 +50,8 @@ public class BoardEditorDialog extends Dialog<Map<String, Object>> {
         grid.addRow(0, new Label("Title"), titleField);
         grid.addRow(1, new Label("Color"), colorPicker);
         grid.addRow(2, new Label("Order"), orderField);
-        grid.addRow(3, favoriteCheck);
+        grid.addRow(3, new Label("Sort notes"), orderNotesCombo);
+        grid.addRow(4, favoriteCheck);
         GridPane.setHgrow(titleField, Priority.ALWAYS);
 
         getDialogPane().setContent(grid);
@@ -64,6 +70,7 @@ public class BoardEditorDialog extends Dialog<Map<String, Object>> {
             payload.put("title", titleField.getText().trim());
             payload.put("color", ColorUtil.toHex(colorPicker.getValue()));
             payload.put("favorite", favoriteCheck.isSelected());
+            payload.put("orderNotes", orderNotesCombo.getValue());
             String orderText = orderField.getText().trim();
             if (!orderText.isEmpty()) {
                 payload.put("order", Integer.parseInt(orderText));

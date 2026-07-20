@@ -11,6 +11,7 @@ public class Board {
     public String color;
     public int order;
     public boolean favorite;
+    public String orderNotes;
     public String createdAt;
     public String updatedAt;
 

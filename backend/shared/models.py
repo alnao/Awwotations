@@ -118,6 +118,7 @@ class BoardCreateRequest(BaseModel):
     color: str = Field(default="#ffd966")
     order: Optional[int] = Field(default=None, ge=0, description="Display order; auto-assigned as max+1 when omitted")
     favorite: bool = Field(default=False)
+    orderNotes: str = Field(default="POS_X")
 
     @field_validator("color")
     @classmethod
@@ -126,18 +127,36 @@ class BoardCreateRequest(BaseModel):
             raise ValueError("color must be a valid hex color, e.g. #ffd966")
         return v
 
+    @field_validator("orderNotes")
+    @classmethod
+    def _validate_order_notes(cls, v: str) -> str:
+        allowed = ("CREATE_DESC", "CREATE_ASC", "USER_DATE_DESC", "USER_DATE_ASC", "TITLE", "POS_X", "POS_Y")
+        if v not in allowed:
+            raise ValueError(f"orderNotes must be one of {allowed}")
+        return v
+
 
 class BoardUpdateRequest(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=256)
     color: Optional[str] = None
     order: Optional[int] = Field(default=None, ge=0)
     favorite: Optional[bool] = None
+    orderNotes: Optional[str] = None
 
     @field_validator("color")
     @classmethod
     def _validate_color(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and not HEX_COLOR_REGEX.match(v):
             raise ValueError("color must be a valid hex color, e.g. #ffd966")
+        return v
+
+    @field_validator("orderNotes")
+    @classmethod
+    def _validate_order_notes(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            allowed = ("CREATE_DESC", "CREATE_ASC", "USER_DATE_DESC", "USER_DATE_ASC", "TITLE", "POS_X", "POS_Y")
+            if v not in allowed:
+                raise ValueError(f"orderNotes must be one of {allowed}")
         return v
 
 

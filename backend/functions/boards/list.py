@@ -20,6 +20,7 @@ def handler(event: dict, context: object) -> dict:
             "color": b["color"],
             "order": b.get("order", 0),
             "favorite": b.get("favorite", False),
+            "orderNotes": b.get("orderNotes", "POS_X"),
             "createdAt": b["createdAt"],
             "updatedAt": b["updatedAt"],
         }

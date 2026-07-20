@@ -20,8 +20,10 @@ export default function NoteCard({
   onPin,
   onFavorite,
   onMove,
+  isPosBased = true,
 }) {
   const locked = LOCKED_STATUSES.includes(note.status);
+  const dragLocked = locked || !isPosBased;
   const transitions = STATUS_TRANSITIONS[note.status] || [];
 
   const [pos, setPos] = useState({ x: note.posX || 0, y: note.posY || 0 });
@@ -32,7 +34,7 @@ export default function NoteCard({
   }, [note.posX, note.posY]);
 
   const handleMouseDown = (e) => {
-    if (e.button !== 0 || locked) return; // Only left click, only if not locked
+    if (e.button !== 0 || dragLocked) return; // Only left click, only if not locked and pos-based
     if (e.target.closest("button") || e.target.closest("select") || e.target.closest("a")) return;
 
     e.preventDefault();
@@ -75,8 +77,9 @@ export default function NoteCard({
       className="note"
       style={{
         background: note.color,
-        left: `${pos.x}px`,
-        top: `${pos.y}px`,
+        position: isPosBased ? "absolute" : "relative",
+        left: isPosBased ? `${pos.x}px` : "auto",
+        top: isPosBased ? `${pos.y}px` : "auto",
         width: `${note.width}px`,
         height: `${note.height}px`,
         zIndex: isDragging ? 100 : 1,
@@ -86,7 +89,7 @@ export default function NoteCard({
       <div
         className="note-header"
         onMouseDown={handleMouseDown}
-        style={{ cursor: locked ? "default" : isDragging ? "grabbing" : "grab" }}
+        style={{ cursor: dragLocked ? "default" : isDragging ? "grabbing" : "grab" }}
       >
         {note.iconMain && <i className={note.iconMain} />}
         <span style={{ flex: 1, userSelect: "none" }}>{note.title}</span>

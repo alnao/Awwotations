@@ -453,6 +453,10 @@ components:
         favorite:
           type: boolean
           default: false
+        orderNotes:
+          type: string
+          enum: [CREATE_DESC, CREATE_ASC, USER_DATE_DESC, USER_DATE_ASC, TITLE, POS_X, POS_Y]
+          default: POS_X
         createdAt:
           type: string
           format: date-time
@@ -476,6 +480,10 @@ components:
         favorite:
           type: boolean
           default: false
+        orderNotes:
+          type: string
+          enum: [CREATE_DESC, CREATE_ASC, USER_DATE_DESC, USER_DATE_ASC, TITLE, POS_X, POS_Y]
+          default: POS_X
 
     BoardUpdateRequest:
       type: object
@@ -489,6 +497,9 @@ components:
           minimum: 0
         favorite:
           type: boolean
+        orderNotes:
+          type: string
+          enum: [CREATE_DESC, CREATE_ASC, USER_DATE_DESC, USER_DATE_ASC, TITLE, POS_X, POS_Y]
 
     Link:
       type: object

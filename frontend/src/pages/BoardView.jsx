@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../api.js";
 import NoteCard from "./NoteCard.jsx";
 import NoteEditor from "./NoteEditor.jsx";
+import BoardEditor from "./BoardEditor.jsx";
 
 function findFreePosition(note, placedNotes, step = 30) {
   const x = note.posX || 0;
@@ -52,6 +53,28 @@ function findFreePosition(note, placedNotes, step = 30) {
   return { posX: x + 40, posY: y + 40 };
 }
 
+function sortNotesList(notes, orderNotes) {
+  const sorted = [...notes];
+  switch (orderNotes) {
+    case "CREATE_DESC":
+      return sorted.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    case "CREATE_ASC":
+      return sorted.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+    case "USER_DATE_DESC":
+      return sorted.sort((a, b) => (b.userDateTime || "").localeCompare(a.userDateTime || ""));
+    case "USER_DATE_ASC":
+      return sorted.sort((a, b) => (a.userDateTime || "").localeCompare(b.userDateTime || ""));
+    case "TITLE":
+      return sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    case "POS_X":
+      return sorted.sort((a, b) => (a.posX || 0) - (b.posX || 0));
+    case "POS_Y":
+      return sorted.sort((a, b) => (a.posY || 0) - (b.posY || 0));
+    default:
+      return sorted;
+  }
+}
+
 function resolveOverlaps(notes) {
   const sorted = [...notes].sort((a, b) => {
     const tA = a.updatedAt || "";
@@ -71,14 +94,26 @@ function resolveOverlaps(notes) {
 
 export default function BoardView() {
   const { boardId } = useParams();
+  const [board, setBoard] = useState(null);
   const [notes, setNotes] = useState([]);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(null); // note object or {} for new
+  const [editingBoard, setEditingBoard] = useState(false);
 
   async function load() {
     try {
+      const boardsRes = await api.listBoards();
+      const currentBoard = boardsRes.boards?.find((b) => b.boardId === boardId);
+      setBoard(currentBoard || null);
+
       const res = await api.listNotes(boardId);
-      const resolved = resolveOverlaps(res.notes || []);
+      const rawNotes = res.notes || [];
+
+      const orderNotes = currentBoard?.orderNotes || "POS_X";
+      const sorted = sortNotesList(rawNotes, orderNotes);
+
+      const isPosBased = orderNotes === "POS_X" || orderNotes === "POS_Y";
+      const resolved = isPosBased ? resolveOverlaps(sorted) : sorted;
       setNotes(resolved);
     } catch (err) {
       setError(err.message);
@@ -114,17 +149,68 @@ export default function BoardView() {
     }
   }
 
+  const isPosBased = !board || board.orderNotes === "POS_X" || board.orderNotes === "POS_Y";
+
   return (
     <div className="container">
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <h2>
-          <Link to="/">← Boards</Link>
-        </h2>
+      <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div className="row" style={{ flexWrap: "wrap", gap: "16px" }}>
+          <h2>
+            <Link to="/">← Boards</Link>
+            {board && (
+              <>
+                <span style={{ marginLeft: 8, color: board.color }}>/ {board.title}</span>
+                <button
+                  className="icon-btn"
+                  onClick={() => setEditingBoard(true)}
+                  style={{ marginLeft: 8, display: "inline-flex", alignItems: "center" }}
+                  title="Edit Board Settings"
+                >
+                  <i className="fas fa-cog" />
+                </button>
+              </>
+            )}
+          </h2>
+          {board && (
+            <div className="row" style={{ gap: "6px" }}>
+              <label htmlFor="order-notes-select" style={{ fontSize: 13, color: "var(--muted)" }}>
+                Sort notes:
+              </label>
+              <select
+                id="order-notes-select"
+                value={board.orderNotes || "POS_X"}
+                onChange={async (e) => {
+                  const newOrder = e.target.value;
+                  try {
+                    await api.updateBoard(boardId, { orderNotes: newOrder });
+                    load();
+                  } catch (err) {
+                    setError(err.message);
+                  }
+                }}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--border)",
+                  fontSize: 13,
+                }}
+              >
+                <option value="POS_X">Position X</option>
+                <option value="POS_Y">Position Y</option>
+                <option value="CREATE_ASC">Created (Oldest first)</option>
+                <option value="CREATE_DESC">Created (Newest first)</option>
+                <option value="USER_DATE_ASC">User Date (Ascending)</option>
+                <option value="USER_DATE_DESC">User Date (Descending)</option>
+                <option value="TITLE">Title (Alphabetical)</option>
+              </select>
+            </div>
+          )}
+        </div>
         <button
           className="btn"
           onClick={() => {
-            const nextPosX = 40 + (notes.length * 30) % 300;
-            const nextPosY = 40 + (notes.length * 30) % 300;
+            const nextPosX = 450 + (notes.length * 30) % 300;
+            const nextPosY = 150 + (notes.length * 30) % 300;
             setEditing({ posX: nextPosX, posY: nextPosY });
           }}
         >
@@ -133,11 +219,25 @@ export default function BoardView() {
       </div>
       {error && <div className="error">{error}</div>}
 
-      <div className="notes-canvas">
+      <div
+        className="notes-canvas"
+        style={
+          !isPosBased
+            ? {
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "16px",
+                padding: "16px",
+                alignContent: "flex-start",
+              }
+            : undefined
+        }
+      >
         {notes.map((n) => (
           <NoteCard
             key={n.noteId}
             note={n}
+            isPosBased={isPosBased}
             onEdit={() => setEditing(n)}
             onDelete={() =>
               withReload(() => api.deleteNote(boardId, n.noteId))
@@ -178,6 +278,23 @@ export default function BoardView() {
           note={editing}
           onCancel={() => setEditing(null)}
           onSave={onSave}
+        />
+      )}
+
+      {editingBoard && (
+        <BoardEditor
+          board={board}
+          onCancel={() => setEditingBoard(false)}
+          onSave={async (payload) => {
+            setError("");
+            try {
+              await api.updateBoard(boardId, payload);
+              setEditingBoard(false);
+              load();
+            } catch (err) {
+              setError(err.message);
+            }
+          }}
         />
       )}
     </div>

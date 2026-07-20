@@ -228,9 +228,42 @@ public class MainView {
 
     /** Show all notes of the active board or only the favorite ones. */
     private void applyNotesFilter() {
-        notes.setAll(notesFavoritesToggle.isSelected()
+        Board activeBoard = boardCombo.getValue();
+        String orderNotes = activeBoard != null ? activeBoard.orderNotes : "POS_X";
+        if (orderNotes == null) {
+            orderNotes = "POS_X";
+        }
+
+        List<Note> filtered = notesFavoritesToggle.isSelected()
                 ? allNotes.stream().filter(n -> n.favorite).toList()
-                : allNotes);
+                : allNotes;
+
+        final String sortKey = orderNotes;
+        List<Note> sorted = filtered.stream().sorted((a, b) -> {
+            switch (sortKey) {
+                case "CREATE_DESC":
+                    return getSafeString(b.createdAt).compareTo(getSafeString(a.createdAt));
+                case "CREATE_ASC":
+                    return getSafeString(a.createdAt).compareTo(getSafeString(b.createdAt));
+                case "USER_DATE_DESC":
+                    return getSafeString(b.userDateTime).compareTo(getSafeString(a.userDateTime));
+                case "USER_DATE_ASC":
+                    return getSafeString(a.userDateTime).compareTo(getSafeString(b.userDateTime));
+                case "TITLE":
+                    return getSafeString(a.title).compareTo(getSafeString(b.title));
+                case "POS_Y":
+                    return Double.compare(a.posY, b.posY);
+                case "POS_X":
+                default:
+                    return Double.compare(a.posX, b.posX);
+            }
+        }).toList();
+
+        notes.setAll(sorted);
+    }
+
+    private String getSafeString(String s) {
+        return s == null ? "" : s;
     }
 
     private void reloadCurrentNotes() {
